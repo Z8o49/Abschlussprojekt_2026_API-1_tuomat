@@ -1,0 +1,12 @@
+// Author: Mattia Tuor
+// Date: 03.06.2026
+// Version: 1.0
+// Description: Datenbankschema für die GymTracker App
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
