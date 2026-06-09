@@ -1,12 +1,22 @@
 /**
  * Author: Mattia Tuor
  * Date: 02.06.2026
- * Version: 1.0
+ * Version: 2.0
  * Description: Einstiegspunkt des Express-Backends, definiert den Server und Basis-Endpunkte
  */
 
 import express from 'express';
 import cors from 'cors';
+import Database from 'better-sqlite3';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const dbPath = join(__dirname, '../dev.db');
+console.log('DB Pfad:', dbPath);
+const db = new Database(dbPath);
 
 const app = express();
 const PORT = 3000;
@@ -18,6 +28,20 @@ app.use(express.json());
 // Test-Endpoint um zu prüfen ob der Server läuft
 app.get('/health', (req, res) => {
   res.json({ status: 'Server läuft' });
+});
+
+// Workout erstellen
+app.post('/workouts', (req, res) => {
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: 'Name ist erforderlich' });
+  }
+
+  const stmt = db.prepare('INSERT INTO Workout (name, createdAt) VALUES (?, ?)');
+  const result = stmt.run(name, new Date().toISOString());
+
+  res.status(201).json({ id: result.lastInsertRowid, name, createdAt: new Date().toISOString() });
 });
 
 // Server starten
