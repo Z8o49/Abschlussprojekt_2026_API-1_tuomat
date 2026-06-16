@@ -8,6 +8,9 @@
 import React from 'react';
 import AppNavigator from './app/navigation/AppNavigator';
 
+import { LogBox } from 'react-native';
+LogBox.ignoreLogs(['Passing an object as the argument to \'navigate\' is deprecated']);
+
 export default function App() {
   return <AppNavigator />;
 }
