@@ -1,7 +1,7 @@
 /**
  * Author: Mattia Tuor
- * Date: 10.06.2026
- * Version: 3.0
+ * Date: 16.06.2026
+ * Version: 4.0
  * Description: Einstiegspunkt des Express-Backends – definiert Server und alle REST-Endpunkte
  */
 
@@ -30,13 +30,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'Server läuft' });
 });
 
-// Alle Workouts abrufen (Issue #11)
+// ── Workouts ──────────────────────────────────────────────
+
+// GET /workouts – alle Workouts abrufen (Issue #11)
 app.get('/workouts', (req, res) => {
   const workouts = db.prepare('SELECT * FROM Workout ORDER BY createdAt DESC').all();
   res.json(workouts);
 });
 
-// Workout erstellen (Issue #10)
+// POST /workouts – neues Workout erstellen (Issue #10)
 app.post('/workouts', (req, res) => {
   const { name } = req.body;
 
@@ -50,14 +52,24 @@ app.post('/workouts', (req, res) => {
   res.status(201).json({ id: result.lastInsertRowid, name, createdAt: new Date().toISOString() });
 });
 
-// Übungen eines Workouts abrufen (Issue #12)
+// ── Exercises ─────────────────────────────────────────────
+
+// GET /workouts/:id/exercises – alle Übungen eines Workouts laden (Issue #12)
 app.get('/workouts/:id/exercises', (req, res) => {
   const { id } = req.params;
+
   const exercises = db.prepare('SELECT * FROM Exercise WHERE workoutId = ?').all(id);
-  res.json(exercises);
+
+  // Sets zu jeder Übung dazuladen
+  const exercisesWithSets = exercises.map((exercise) => {
+    const sets = db.prepare('SELECT * FROM "Set" WHERE exerciseId = ?').all(exercise.id);
+    return { ...exercise, sets };
+  });
+
+  res.json(exercisesWithSets);
 });
 
-// Übung zu einem Workout hinzufügen (Issue #12)
+// POST /workouts/:id/exercises – Übung zu einem Workout hinzufügen (Issue #13)
 app.post('/workouts/:id/exercises', (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
@@ -75,7 +87,30 @@ app.post('/workouts/:id/exercises', (req, res) => {
   const stmt = db.prepare('INSERT INTO Exercise (name, workoutId) VALUES (?, ?)');
   const result = stmt.run(name, id);
 
-  res.status(201).json({ id: result.lastInsertRowid, name, workoutId: Number(id) });
+  res.status(201).json({ id: result.lastInsertRowid, name, workoutId: Number(id), sets: [] });
+});
+
+// ── Sets ──────────────────────────────────────────────────
+
+// POST /exercises/:id/sets – Set zu einer Übung hinzufügen (Issue #14)
+app.post('/exercises/:id/sets', (req, res) => {
+  const { id } = req.params;
+  const { weight, reps } = req.body;
+
+  if (weight === undefined || !reps) {
+    return res.status(400).json({ error: 'weight und reps sind erforderlich' });
+  }
+
+  // Prüfen ob die Übung existiert
+  const exercise = db.prepare('SELECT * FROM Exercise WHERE id = ?').get(id);
+  if (!exercise) {
+    return res.status(404).json({ error: 'Übung nicht gefunden' });
+  }
+
+  const stmt = db.prepare('INSERT INTO "Set" (weight, reps, exerciseId) VALUES (?, ?, ?)');
+  const result = stmt.run(weight, reps, id);
+
+  res.status(201).json({ id: result.lastInsertRowid, weight, reps, exerciseId: Number(id) });
 });
 
 // Server starten

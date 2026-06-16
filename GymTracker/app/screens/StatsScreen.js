@@ -1,29 +1,18 @@
 /**
  * Author: Mattia Tuor
  * Date: 02.06.2026
- * Version: 1.0
+ * Version: 1.1
  * Description: Placeholder Screen für Statistiken
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
+import globalStyles from '../styles/globalStyles';
 
 export default function StatsScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Statistiken</Text>
+    <View style={globalStyles.centeredContainer}>
+      <Text style={globalStyles.title}>Statistiken</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-});
