@@ -1,8 +1,8 @@
 /**
  * Author: Mattia Tuor
- * Date: 16.06.2026
- * Version: 2.0
- * Description: Hauptnavigation der App mit Bottom Tab Navigator und Stack Navigator für Workout-Details
+ * Date: 17.06.2026
+ * Version: 3.0
+ * Description: Hauptnavigation mit Bottom Tab Navigator und Stack Navigatoren für Workout und Historie
  */
 
 import React from 'react';
@@ -29,6 +29,16 @@ function WorkoutStack() {
   );
 }
 
+// Stack Navigator für Historie-Tab (Liste + Detailansicht)
+function HistorieStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HistorieList" component={HistoryScreen} />
+      <Stack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
 // Hauptnavigation mit vier Tabs
 export default function AppNavigator() {
   return (
@@ -36,7 +46,7 @@ export default function AppNavigator() {
       <Tab.Navigator>
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Workout" component={WorkoutStack} />
-        <Tab.Screen name="Historie" component={HistoryScreen} />
+        <Tab.Screen name="Historie" component={HistorieStack} />
         <Tab.Screen name="Statistiken" component={StatsScreen} />
       </Tab.Navigator>
     </NavigationContainer>
