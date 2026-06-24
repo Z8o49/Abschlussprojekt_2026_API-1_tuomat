@@ -58,7 +58,3 @@ Anschliessend im Terminal `a` drücken, um die App im Android-Emulator zu öffne
 - Übungen und Sätze (Gewicht/Wiederholungen) pro Workout erfassen
 - Trainingshistorie mit Datumsfilter
 - Statistiken: Gesamtanzahl Workouts, Trainings pro Woche, Gewichtsfortschritt pro Übung
-
-## Lizenz
-
-Siehe [LICENSE](./LICENSE).
