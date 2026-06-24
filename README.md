@@ -13,7 +13,7 @@ Entwickelt als Abschlussprojekt (BLJ) von Mattia Tuor.
 
 ## Projektstruktur
 
-```
+```Projektstruktur
 GymTracker/
 ├── app/
 │   ├── screens/        # Alle Screens der App
