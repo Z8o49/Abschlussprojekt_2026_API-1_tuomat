@@ -1,8 +1,9 @@
 /**
  * Author: Mattia Tuor
- * Date: 16.06.2026
- * Version: 5.0
- * Description: Screen für Workout-Übersicht und neues Workout erstellen
+ * Date: 24.06.2026
+ * Version: 6.0
+ * Description: Screen für Workout-Übersicht und neues Workout erstellen. Erhält einen sichtbaren
+ *              Fehlerzustand mit Retry-Möglichkeit und einen Schutz gegen Doppel-Submits (Issue #24).
  */
 
 import React, { useState, useEffect } from 'react';
@@ -15,7 +16,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
-import globalStyles from '../styles/globalStyles';
+import globalStyles, { colors } from '../styles/globalStyles';
 
 const API_URL = 'http://10.0.2.2:3000';
 
@@ -23,6 +24,8 @@ export default function WorkoutScreen({ navigation }) {
   const [workouts, setWorkouts] = useState([]);
   const [workoutName, setWorkoutName] = useState('');
   const [loadingWorkouts, setLoadingWorkouts] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Alle Workouts beim ersten Laden abrufen
   useEffect(() => {
@@ -38,13 +41,14 @@ export default function WorkoutScreen({ navigation }) {
   // GET /workouts – alle Workouts vom Backend laden
   const fetchWorkouts = async () => {
     setLoadingWorkouts(true);
+    setLoadError(false);
     try {
       const response = await fetch(`${API_URL}/workouts`);
       if (!response.ok) throw new Error('Fehler beim Laden');
       const data = await response.json();
       setWorkouts(data);
     } catch (error) {
-      Alert.alert('Fehler', 'Workouts konnten nicht geladen werden.');
+      setLoadError(true);
     } finally {
       setLoadingWorkouts(false);
     }
@@ -56,6 +60,10 @@ export default function WorkoutScreen({ navigation }) {
       Alert.alert('Fehler', 'Bitte einen Workout-Namen eingeben.');
       return;
     }
+
+    // Schutz gegen Doppel-Submits, falls der Button mehrfach getippt wird
+    if (isSaving) return;
+    setIsSaving(true);
 
     try {
       const response = await fetch(`${API_URL}/workouts`, {
@@ -72,6 +80,8 @@ export default function WorkoutScreen({ navigation }) {
       Alert.alert('Erfolg', `Workout "${newWorkout.name}" wurde gespeichert!`);
     } catch (error) {
       Alert.alert('Fehler', 'Das Workout konnte nicht gespeichert werden.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -84,16 +94,39 @@ export default function WorkoutScreen({ navigation }) {
         placeholder="Workout-Name"
         value={workoutName}
         onChangeText={setWorkoutName}
+        editable={!isSaving}
       />
 
-      <TouchableOpacity style={globalStyles.button} onPress={handleSaveWorkout}>
-        <Text style={globalStyles.buttonText}>Speichern</Text>
+      <TouchableOpacity
+        style={[globalStyles.button, isSaving && globalStyles.buttonDisabled]}
+        onPress={handleSaveWorkout}
+        disabled={isSaving}
+        activeOpacity={0.7}
+      >
+        {isSaving ? (
+          <ActivityIndicator size="small" color={colors.primaryText} />
+        ) : (
+          <Text style={globalStyles.buttonText}>Speichern</Text>
+        )}
       </TouchableOpacity>
 
       <Text style={globalStyles.sectionTitle}>Meine Workouts</Text>
 
       {loadingWorkouts ? (
-        <ActivityIndicator size="large" color="#000" style={globalStyles.loader} />
+        <ActivityIndicator size="large" color={colors.primary} style={globalStyles.loader} />
+      ) : loadError ? (
+        <View style={globalStyles.errorContainer}>
+          <Text style={globalStyles.errorText}>
+            Workouts konnten nicht geladen werden. Läuft das Backend?
+          </Text>
+          <TouchableOpacity
+            style={globalStyles.retryButton}
+            onPress={fetchWorkouts}
+            activeOpacity={0.7}
+          >
+            <Text style={globalStyles.retryButtonText}>Erneut versuchen</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={workouts}
@@ -102,6 +135,7 @@ export default function WorkoutScreen({ navigation }) {
             <TouchableOpacity
               style={globalStyles.workoutItem}
               onPress={() => navigation.navigate('WorkoutDetail', { workout: item })}
+              activeOpacity={0.7}
             >
               <Text style={globalStyles.workoutName}>{item.name}</Text>
               <Text style={globalStyles.workoutDate}>

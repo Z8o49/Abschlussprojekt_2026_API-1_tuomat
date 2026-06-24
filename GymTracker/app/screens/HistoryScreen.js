@@ -1,8 +1,9 @@
 /**
  * Author: Mattia Tuor
- * Date: 17.06.2026
- * Version: 2.0
- * Description: Trainingshistorie mit chronologischer Workout-Liste und Datumsfilter
+ * Date: 24.06.2026
+ * Version: 3.0
+ * Description: Trainingshistorie mit chronologischer Workout-Liste und Datumsfilter. Lade-Fehler
+ *              werden jetzt sichtbar mit Retry-Möglichkeit angezeigt statt nur in der Konsole (Issue #24).
  */
 
 import React, { useState, useCallback } from 'react';
@@ -11,13 +12,14 @@ import {
   TextInput, ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import globalStyles from '../styles/globalStyles';
+import globalStyles, { colors } from '../styles/globalStyles';
 
 const API_URL = 'http://10.0.2.2:3000';
 
 export default function HistoryScreen({ navigation }) {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
 
@@ -32,12 +34,13 @@ export default function HistoryScreen({ navigation }) {
   const fetchWorkouts = async () => {
     try {
       setLoading(true);
+      setLoadError(false);
       const response = await fetch(`${API_URL}/workouts`);
       if (!response.ok) throw new Error('Fehler beim Laden');
       const data = await response.json();
       setWorkouts(data);
     } catch (error) {
-      console.error('Fehler beim Laden der Workouts:', error);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -88,7 +91,20 @@ export default function HistoryScreen({ navigation }) {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#000" style={globalStyles.loader} />
+        <ActivityIndicator size="large" color={colors.primary} style={globalStyles.loader} />
+      ) : loadError ? (
+        <View style={globalStyles.errorContainer}>
+          <Text style={globalStyles.errorText}>
+            Trainingshistorie konnte nicht geladen werden. Läuft das Backend?
+          </Text>
+          <TouchableOpacity
+            style={globalStyles.retryButton}
+            onPress={fetchWorkouts}
+            activeOpacity={0.7}
+          >
+            <Text style={globalStyles.retryButtonText}>Erneut versuchen</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={filtered}
@@ -97,6 +113,7 @@ export default function HistoryScreen({ navigation }) {
             <TouchableOpacity
               style={globalStyles.workoutItem}
               onPress={() => navigation.navigate('WorkoutDetail', { workout: item })}
+              activeOpacity={0.7}
             >
               <Text style={globalStyles.workoutName}>{item.name}</Text>
               <Text style={globalStyles.workoutDate}>
